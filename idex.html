@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>TON Mini Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://unpkg.com/@tonconnect/ui@0.0.24/dist/tonconnect-ui.min.js"></script>
+
+<style>
+body {
+  margin: 0;
+  background: #0b0b0b;
+  color: #fff;
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.card {
+  background: #141414;
+  border-radius: 16px;
+  padding: 20px;
+  width: 92%;
+  max-width: 360px;
+  text-align: center;
+  box-shadow: 0 0 25px rgba(0,0,0,.7);
+}
+
+h2 { margin-top: 0; }
+
+button {
+  width: 100%;
+  padding: 14px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.primary {
+  background: #0098ea;
+  color: white;
+}
+
+.secondary {
+  background: #222;
+  color: #aaa;
+}
+
+.play {
+  background: #22c55e;
+  color: black;
+}
+
+.info {
+  margin-top: 12px;
+  font-size: 14px;
+  word-break: break-all;
+}
+
+.balance {
+  margin: 10px 0;
+  font-size: 18px;
+  color: #6ee7ff;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+  <h2>🎮 TON GAME</h2>
+
+  <div class="balance" id="balance">Баланс: 0 TON</div>
+
+  <button class="primary" id="connectBtn">💎 Подключить кошелёк</button>
+  <button class="play" id="playBtn">🎰 Играть (1 TON)</button>
+  <button class="secondary" id="disconnectBtn">❌ Отключить</button>
+
+  <div class="info" id="walletInfo">Кошелёк не подключён</div>
+</div>
+
+<script>
+/* ===== TON CONNECT ===== */
+const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+  manifestUrl: 'https://YOUR_DOMAIN/tonconnect-manifest.json'
+});
+
+let walletAddress = null;
+let balance = 0;
+
+/* ===== ОБНОВЛЕНИЕ UI ===== */
+function updateUI() {
+  document.getElementById("balance").innerText = "Баланс: " + balance + " TON";
+  document.getElementById("walletInfo").innerText =
+    walletAddress ? "Кошелёк:\n" + walletAddress : "Кошелёк не подключён";
+}
+
+/* ===== СТАТУС КОШЕЛЬКА ===== */
+tonConnectUI.onStatusChange(wallet => {
+  if (wallet) {
+    walletAddress = wallet.account.address;
+    if (balance === 0) balance = 5; // 👈 стартовый баланс (имитация)
+  } else {
+    walletAddress = null;
+    balance = 0;
+  }
+  updateUI();
+});
+
+/* ===== КНОПКИ ===== */
+document.getElementById("connectBtn").onclick = async () => {
+  await tonConnectUI.connectWallet();
+};
+
+document.getElementById("disconnectBtn").onclick = async () => {
+  await tonConnectUI.disconnect();
+};
+
+/* ===== ИГРА ===== */
+document.getElementById("playBtn").onclick = async () => {
+
+  // если кошелёк не подключён → сразу TON Connect
+  if (!walletAddress) {
+    await tonConnectUI.connectWallet();
+    return;
+  }
+
+  // если нет баланса → сразу оплата
+  if (balance < 1) {
+    alert("❗ Баланс 0. Пополни кошелёк.");
+    await tonConnectUI.connectWallet();
+    return;
+  }
+
+  // ставка
+  balance -= 1;
+
+  // шанс выигрыша
+  const win = Math.random() < 0.45;
+
+  if (win) {
+    balance += 2;
+    alert("🎉 Ты выиграл 2 TON!");
+  } else {
+    alert("😢 Проигрыш");
+  }
+
+  updateUI();
+};
+</script>
+
+</body>
+</html>
